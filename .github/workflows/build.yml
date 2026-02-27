@@ -1,0 +1,49 @@
+name: Build Windows Executable
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: >
+          pyinstaller
+          --onefile
+          --noconsole
+          --name "1080p-streaming-window"
+          --icon "1080p.ico"
+          --add-data "1080p.png;."
+          --hidden-import win32api
+          --hidden-import win32con
+          --hidden-import win32gui
+          --hidden-import win32ui
+          --hidden-import win32process
+          --hidden-import pystray._win32
+          --hidden-import PIL
+          main.py
+
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 1080p-streaming-window
+          path: dist/1080p-streaming-window.exe
+          retention-days: 30
