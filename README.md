@@ -146,4 +146,4 @@ outer_height = 1080 + title_bar  + bottom_border + top_shadow + bottom_shadow
 
 ## License
 
-MIT
+Apache License 2.0
