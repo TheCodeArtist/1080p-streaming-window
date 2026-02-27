@@ -100,9 +100,21 @@ Every push to the `main` branch triggers the **Build Windows Executable** workfl
 1. Spins up a `windows-latest` runner
 2. Installs Python 3.12 and all dependencies
 3. Runs PyInstaller with the same flags as the local build above
-4. Uploads `1080p-streaming-window.exe` as a downloadable artifact (retained for 30 days)
+4. Uploads `1080p-streaming-window.exe` as a downloadable artifact
 
 Download the artifact from the **Actions** tab of the GitHub repository after a successful run.
+
+### Creating a Release
+
+To publish a new release with the executable attached:
+
+1. Push a tag starting with `v` (e.g., `v1.0.0`):
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+2. The workflow will automatically build the executable and create a new **Release** on GitHub.
+3. The `1080p-streaming-window.exe` file will be available in the **Assets** section of that release.
 
 ---
 
