@@ -1,5 +1,5 @@
 """
-1080p Window Resizer
+1080p Streaming Window
 A system-tray utility that forces any chosen window to 1920×1080,
 ensuring a clean 1080p capture for Twitch / OBS window-capture sources.
 """
@@ -441,6 +441,7 @@ class SelectorWindow:
     def _build_or_raise(self):
         if self._win and self._win.winfo_exists():
             self._win.deiconify()   # un-hide if previously withdrawn
+            self._set_window_style_close_only()  # reapply - deiconify can reset frame styles
             self._win.lift()
             self._win.focus_force()
             return
@@ -451,10 +452,14 @@ class SelectorWindow:
         win.withdraw()  # keep hidden until centred to avoid position flash
         # WHY: Constructing the window while hidden prevents the user from seeing it "jump"
         # from the top-left corner to the center of the screen.
-        win.title("1080p Window Resizer")
+        win.title("1080p Streaming Window")
         win.configure(bg=APP_BG)
         win.resizable(False, False)
         win.protocol("WM_DELETE_WINDOW", self._on_close_to_tray)
+        
+        # Create a standalone window with minimal decorations
+        # Don't use transient() - we want it to be independent
+        
         self._win = win
 
         self._apply_style()
@@ -462,7 +467,7 @@ class SelectorWindow:
         # ── Header ───────────────────────────────────────────────────────────
         hdr = tk.Frame(win, bg=PANEL_BG, pady=12)
         hdr.pack(fill="x")
-        tk.Label(hdr, text="  1080p Window Resizer",
+        tk.Label(hdr, text="  1080p Streaming Window",
                  font=("Segoe UI", 14, "bold"),
                  fg=ACCENT, bg=PANEL_BG).pack(side="left", padx=8)
         tk.Label(hdr, text="Force any window to 1920×1080",
@@ -615,10 +620,14 @@ class SelectorWindow:
         ww = win.winfo_reqwidth()
         wh = win.winfo_reqheight()
         win.geometry(f"+{(sw - ww)//2}+{(sh - wh)//2}")
-        win.deiconify()
         
-        # Remove minimize button after window is shown
-        self._remove_minimize_button()
+        # Strip minimize/maximize buttons BEFORE showing the window.
+        # update_idletasks() above has already forced HWND creation, so winfo_id()
+        # is valid here. Doing this while the window is still withdrawn means the
+        # user never sees the full button set even for a single frame.
+        self._set_window_style_close_only()
+        
+        win.deiconify()
 
     def _apply_style(self):
         style = ttk.Style(self._root)
@@ -726,6 +735,30 @@ class SelectorWindow:
         self._size_var.set(f"{w} × {h}{note}")
         self._status_lbl.config(fg=color)
 
+    def _set_window_style_close_only(self):
+        """Strip minimize and maximize buttons; leave only the close button.
+
+        WHY GetParent: On Windows, Tkinter's Toplevel is two nested Win32 windows.
+        winfo_id() returns the HWND of the *inner* tk frame.  The title bar and
+        its buttons belong to the *outer* decorating window, which is the parent
+        of that inner frame.  We must modify the outer window's style.
+        """
+        if not self._win or not self._win.winfo_exists():
+            return
+        try:
+            inner_hwnd = self._win.winfo_id()
+            hwnd = win32gui.GetParent(inner_hwnd)
+            style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+            style &= ~(win32con.WS_MINIMIZEBOX | win32con.WS_MAXIMIZEBOX)
+            win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, style)
+            win32gui.SetWindowPos(
+                hwnd, 0, 0, 0, 0, 0,
+                win32con.SWP_FRAMECHANGED | win32con.SWP_NOMOVE |
+                win32con.SWP_NOSIZE | win32con.SWP_NOZORDER | win32con.SWP_NOACTIVATE,
+            )
+        except Exception:
+            pass
+
     def _toggle_logs(self):
         if self._log_expanded:
             self._log_body.pack_forget()
@@ -766,34 +799,6 @@ class SelectorWindow:
         self._status_lbl.config(fg=SUCCESS if "✓" in msg else WARNING)
         self._on_select()   # refresh size display
 
-    def _remove_minimize_button(self):
-        """Remove the minimize button from the window using Win32 API."""
-        if not self._win:
-            return
-        try:
-            # Get the window handle
-            hwnd = self._win.winfo_id()
-            
-            # Get current window style
-            style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
-            
-            # Remove the minimize button (WS_MINIMIZEBOX)
-            WS_MINIMIZEBOX = 0x00020000
-            new_style = style & ~WS_MINIMIZEBOX
-            
-            # Apply the new style
-            win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, new_style)
-            
-            # Force the window frame to be redrawn
-            SWP_FRAMECHANGED = 0x0020
-            SWP_NOMOVE = 0x0002
-            SWP_NOSIZE = 0x0001
-            SWP_NOZORDER = 0x0004
-            win32gui.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 
-                                  SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER)
-        except Exception as e:
-            # Silently ignore errors - this is a cosmetic feature
-            pass
 
     def _on_close_to_tray(self):
         """Hide the window to system tray instead of exiting."""
@@ -807,7 +812,7 @@ class App:
         # Hidden root window - owns the event loop
         self._root = tk.Tk()
         self._root.withdraw()
-        self._root.title("1080p Window Resizer")
+        self._root.title("1080p Streaming Window")
         # Set icon on the hidden root so every child Toplevel inherits it
         self._tk_icon = ImageTk.PhotoImage(_load_app_icon(32))
         self._root.iconphoto(True, self._tk_icon)
@@ -824,9 +829,9 @@ class App:
             pystray.MenuItem("Exit",             self._on_exit),
         )
         self._tray = pystray.Icon(
-            "StreamResizer",
+            "1080pStreamingWindow",
             _make_tray_image(),
-            "1080p Window Resizer\nClick to show window",
+            "1080p Streaming Window \nClick to show window",
             menu,
         )
 
