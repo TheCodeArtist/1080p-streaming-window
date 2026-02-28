@@ -605,6 +605,7 @@ class SelectorWindow:
             relief="flat", bd=0, highlightthickness=1,
             highlightbackground=BORDER,
             wrap="word", height=10,
+            padx=6, pady=4,
             state="disabled",
             yscrollcommand=log_scroll.set,
         )
@@ -766,7 +767,7 @@ class SelectorWindow:
             self._log_toggle_btn.config(text="▶  Logs")
             self._log_expanded = False
         else:
-            self._log_body.pack(fill="both", expand=True, pady=(4, 0))
+            self._log_body.pack(fill="both", expand=True, pady=(4, 10))
             self._log_clear_btn.pack(side="right")
             self._log_toggle_btn.config(text="▼  Logs")
             self._log_expanded = True
