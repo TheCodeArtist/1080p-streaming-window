@@ -1,7 +1,7 @@
 # 1080p Streaming Window
 
-A Windows system-tray utility that forces any chosen window to exactly **1920 × 1080** pixels.  
-Ensuring a clean, letterbox-free capture for Twitch / OBS window-capture sources.
+A Windows system-tray utility that resizes any chosen window such that its client-area is exactly **1920 × 1080** pixels.  
+Ensuring a clean, letterbox-free capture for window-capture sources (eg. OBS).
 
 ![Before and after resizing a window to 1920×1080](Demo.png)
 
@@ -9,7 +9,7 @@ Ensuring a clean, letterbox-free capture for Twitch / OBS window-capture sources
 
 ## Features
 
-- **System tray app** - lives quietly in the taskbar tray; no persistent terminal window
+- **System tray app** - lives quietly in the taskbar tray; no persistent terminal window. Closing the window hides it to the system tray
 - **Window picker** - lists all visible, titled top-level windows with their icons
 - **DWM-aware resizing** - accounts for title bars, window borders, and drop-shadows so the *client* (content) area is exactly 1920 × 1080, not just the outer frame; all coordinates are physical pixels regardless of display scaling
 - **Collapsible debug log** - detailed resize diagnostics (outer rect, visible rect, shadow margins, NC frame, DPI) available on demand
@@ -57,11 +57,8 @@ The app opens the window picker immediately and places an icon in the system tra
 4. Optionally check **Also move window to top-left of active display** to align it with your OBS scene
 5. Click **Resize to 1920 × 1080** (or double-click a row for a single window)
 
-Closing the picker exits the app.
-
-To keep the app running, minimize the window instead of closing it.
-
-While running, you can use the system tray icon to bring the window back to the front or to exit the application.
+Closing the window minimizes it to the system tray.  
+Use the system tray icon to restore the window or to fully exit the application.
 
 ---
 

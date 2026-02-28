@@ -454,7 +454,7 @@ class SelectorWindow:
         win.title("1080p Window Resizer")
         win.configure(bg=APP_BG)
         win.resizable(False, False)
-        win.protocol("WM_DELETE_WINDOW", self._on_close or self._root.quit)
+        win.protocol("WM_DELETE_WINDOW", self._on_close_to_tray)
         self._win = win
 
         self._apply_style()
@@ -616,6 +616,9 @@ class SelectorWindow:
         wh = win.winfo_reqheight()
         win.geometry(f"+{(sw - ww)//2}+{(sh - wh)//2}")
         win.deiconify()
+        
+        # Remove minimize button after window is shown
+        self._remove_minimize_button()
 
     def _apply_style(self):
         style = ttk.Style(self._root)
@@ -763,6 +766,40 @@ class SelectorWindow:
         self._status_lbl.config(fg=SUCCESS if "✓" in msg else WARNING)
         self._on_select()   # refresh size display
 
+    def _remove_minimize_button(self):
+        """Remove the minimize button from the window using Win32 API."""
+        if not self._win:
+            return
+        try:
+            # Get the window handle
+            hwnd = self._win.winfo_id()
+            
+            # Get current window style
+            style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+            
+            # Remove the minimize button (WS_MINIMIZEBOX)
+            WS_MINIMIZEBOX = 0x00020000
+            new_style = style & ~WS_MINIMIZEBOX
+            
+            # Apply the new style
+            win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, new_style)
+            
+            # Force the window frame to be redrawn
+            SWP_FRAMECHANGED = 0x0020
+            SWP_NOMOVE = 0x0002
+            SWP_NOSIZE = 0x0001
+            SWP_NOZORDER = 0x0004
+            win32gui.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 
+                                  SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER)
+        except Exception as e:
+            # Silently ignore errors - this is a cosmetic feature
+            pass
+
+    def _on_close_to_tray(self):
+        """Hide the window to system tray instead of exiting."""
+        if self._win:
+            self._win.withdraw()
+
 
 # ── Application entry point ───────────────────────────────────────────────────
 class App:
@@ -776,24 +813,24 @@ class App:
         self._root.iconphoto(True, self._tk_icon)
 
         self._tray: pystray.Icon | None = None
-        self._selector = SelectorWindow(self._root, on_close=self._on_exit)
+        self._selector = SelectorWindow(self._root)
         self._root.protocol("WM_DELETE_WINDOW", self._on_exit)
 
     # ── Tray setup ────────────────────────────────────────────────────────────
     def _build_tray(self):
         menu = pystray.Menu(
-            pystray.MenuItem("Select Window…",   self._on_select,  default=True),
+            pystray.MenuItem("Show Window",      self._on_show_window, default=True),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Exit",             self._on_exit),
         )
         self._tray = pystray.Icon(
             "StreamResizer",
             _make_tray_image(),
-            "1080p Window Resizer\nClick to select a window",
+            "1080p Window Resizer\nClick to show window",
             menu,
         )
 
-    def _on_select(self, _icon=None, _item=None):
+    def _on_show_window(self, _icon=None, _item=None):
         self._selector.show()
 
     def _on_exit(self, _icon=None, _item=None):
