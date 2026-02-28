@@ -521,7 +521,7 @@ class SelectorWindow:
         # ── Options ──────────────────────────────────────────────────────────
         opt_frame = tk.Frame(win, bg=APP_BG, padx=14, pady=8)
         opt_frame.pack(fill="x")
-        self._move_var = tk.BooleanVar(value=False)
+        self._move_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(opt_frame, text="Also move window to top-left of active display",
                         variable=self._move_var,
                         style="Switch.TCheckbutton").pack(side="left")

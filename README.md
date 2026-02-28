@@ -54,7 +54,7 @@ The app opens the window picker immediately and places an icon in the system tra
 1. The picker lists all visible windows - scroll to find the one you want to capture in OBS
 2. Click to select it (Ctrl+click / Shift+click for multiple windows)
 3. The current client size is shown in the info bar below the list - green means already 1920×1080
-4. Optionally check **Also move window to top-left of active display** to align it with your OBS scene
+4. The **Also move window to top-left of active display** option is checked by default (uncheck to keep the current position)
 5. Click **Resize to 1920 × 1080** (or double-click a row for a single window)
 
 Closing the window minimizes it to the system tray.  
